@@ -4,5 +4,5 @@ This is the code I wrote when following through the amazing tutorial [Build Your
 
 ## Compile Instructions
 ```bash
-cc -std=c99 -Wall parsing.c mpc/mpc.c -ledit -lm -Impc/ -o parsing
+cc -std=c99 -Wall parsing.c mpc/mpc.c -ledit -lm -o parsing
 ```

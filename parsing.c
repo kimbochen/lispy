@@ -3,8 +3,24 @@
 #include <stdbool.h>
 
 #include <editline/readline.h>
-#include "mpc.h"
+#include "mpc/mpc.h"
 
+
+long eval_op(char *op, long x, long y)
+{
+    switch (op[0]) {
+        case '+':
+            return x + y;
+        case '-':
+            return x - y;
+        case '*':
+            return x * y;
+        case '/':
+            return x / y;
+        default:
+            return -1;
+    }
+}
 
 long eval(mpc_ast_t *node)
 {
@@ -18,22 +34,7 @@ long eval(mpc_ast_t *node)
         for (int i = 3; strstr(children[i]->tag, "expr"); i++)
         {
             long y = eval(children[i]);
-            switch (op[0]) {
-                case '+':
-                    x = x + y;
-                    break;
-                case '-':
-                    x = x - y;
-                    break;
-                case '*':
-                    x = x * y;
-                    break;
-                case '/':
-                    x = x / y;
-                    break;
-                default:
-                    return -1;
-            }
+            x = eval_op(op, x, y);
         }
         return x;
     }
@@ -72,13 +73,11 @@ int main(int argc, char **argv)
             puts("");
             break;
         }
-        else
-            add_history(input);
+        add_history(input);
 
         mpc_result_t r;
 
         if (mpc_parse("<stdin>", input, Lispy, &r)) {
-            // mpc_ast_print(r.output);
             long result = eval(r.output);
             printf("%li\n", result);
             mpc_ast_delete(r.output);
