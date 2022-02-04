@@ -186,17 +186,17 @@ lval* builtin_op(lval* v, char* op)
 lval* lval_eval(lval* v)
 {
     if (v -> type == LVAL_SEXPR && v -> count > 0) {
-        lval* result = NULL;
-
         for (int i = 0; i < v -> count; i++) {
             v -> cell[i] = lval_eval(v -> cell[i]);
 
             if (v -> cell[i] -> type == LVAL_ERR) {
-                result = lval_pop(v, i);
+                lval* err = lval_pop(v, i);
                 lval_del(v);
-                return result;
+                return err;
             }
         }
+
+        lval* result = NULL;
 
         if (v -> count == 1) {
             result = lval_pop(v, 0);
@@ -209,7 +209,6 @@ lval* lval_eval(lval* v)
         else {
             result = lval_err("S-expression must start with a symbol");
         }
-
         lval_del(v);
 
         return result;
