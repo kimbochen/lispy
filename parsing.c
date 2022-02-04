@@ -9,15 +9,17 @@
 typedef struct
 {
     int type;
-    long num;
-    int err;
+    union {
+        long num;
+        int err;
+    };
 } lval;
 
 enum { LVAL_NUM, LVAL_ERR };
 enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
 
 
-lval create_lval_num(long num_)
+lval lval_num(long num_)
 {
     lval v;
     v.type = LVAL_NUM;
@@ -25,7 +27,7 @@ lval create_lval_num(long num_)
     return v;
 }
 
-lval create_lval_err(int err_)
+lval lval_err(int err_)
 {
     lval v;
     v.type = LVAL_ERR;
@@ -61,25 +63,25 @@ void lval_print(lval v)
 }
 
 
-lval eval_op(char *op, lval lval_x, lval lval_y)
+lval eval_op(char *op, lval x, lval y)
 {
-    if (lval_x.type == LVAL_ERR) return lval_x;
-    if (lval_y.type == LVAL_ERR) return lval_y;
+    if (x.type == LVAL_ERR) return x;
+    if (y.type == LVAL_ERR) return y;
 
-    long x = lval_x.num;
-    long y = lval_y.num;
+    long nx = x.num;
+    long ny = y.num;
 
     switch (op[0]) {
         case '+':
-            return create_lval_num(x + y);
+            return lval_num(nx + ny);
         case '-':
-            return create_lval_num(x - y);
+            return lval_num(nx - ny);
         case '*':
-            return create_lval_num(x * y);
+            return lval_num(nx * ny);
         case '/':
-            return (y == 0) ? create_lval_err(LERR_DIV_ZERO) : create_lval_num(x / y);
+            return (ny == 0) ? lval_err(LERR_DIV_ZERO) : lval_num(nx / ny);
         default:
-            return create_lval_err(LERR_BAD_OP);
+            return lval_err(LERR_BAD_OP);
     }
 }
 
@@ -102,8 +104,7 @@ lval eval(mpc_ast_t *node)
     else { // node is a number, return the number
         errno = 0;
         long x = strtol(node->contents, NULL, 10);
-        return (errno == ERANGE) ?
-            create_lval_err(LERR_BAD_NUM) : create_lval_num(x);
+        return (errno == ERANGE) ? lval_err(LERR_BAD_NUM) : lval_num(x);
     }
 }
 
@@ -112,20 +113,22 @@ int main(int argc, char **argv)
 {
     // Parsers
     mpc_parser_t *Number = mpc_new("number");
-    mpc_parser_t *Operator = mpc_new("operator");
+    mpc_parser_t *Symbol = mpc_new("symbol");
+    mpc_parser_t *Sexpr = mpc_new("sexpr");
     mpc_parser_t *Expr = mpc_new("expr");
     mpc_parser_t *Lispy = mpc_new("lispy");
 
     // Define the language
     mpca_lang(
         MPCA_LANG_DEFAULT,
-        "                                                 \
-        number   : /-?[0-9]+/;                            \
-        operator : '+' | '-' | '*' | '/';                 \
-        expr     : <number> | '(' <operator> <expr>+ ')'; \
-        lispy    : /^/ <operator> <expr>+ /$/;            \
+        "                                        \
+        number : /-?[0-9]+/ ;                    \
+        symbol : '+' | '-' | '*' | '/' ;         \
+        sexpr  : '(' <expr>* ')' ;               \
+        expr   : <number> | <symbol> | <sexpr> ; \
+        lispy  : /^/ <expr>* /$/ ;               \
         ",
-        Number, Operator, Expr, Lispy
+        Number, Symbol, Sexpr, Expr, Lispy
     );
 
     puts("Lispy Version 0.1");
@@ -155,7 +158,7 @@ int main(int argc, char **argv)
     }
 
     // Cleanup parsers
-    mpc_cleanup(4, Number, Operator, Expr, Lispy);
+    mpc_cleanup(5, Number, Symbol, Sexpr, Expr, Lispy);
 
     return 0;
 }
