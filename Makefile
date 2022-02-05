@@ -1,18 +1,17 @@
 CFLAGS = -std=c99 -Wall
 LIB = -ledit -lm
 
-all: parsing.o
-	cc $(CFLAGS) parsing.o mpc.o $(LIB) -o parsing
+all: main.o
+	cc $(CFLAGS) main.o mpc.o $(LIB) -o lispy
 
-debug: parsing.c
-	cc $(CFLAGS) -g -c parsing.c
-	cc $(CFLAGS) -g parsing.o mpc.o $(LIB) -o parsing
+debug: main.o
+	cc $(CFLAGS) -g main.o mpc.o $(LIB) -o lispy
 
-parsing.o: parsing.c
-	cc $(CFLAGS) -c parsing.c
+main.o: main.c
+	cc $(CFLAGS) -c main.c
 
 mpc.o: mpc.c
 	cc $(CFLAGS) -c mpc.c
 
 clean:
-	rm -f parsing
+	rm -f lispy
